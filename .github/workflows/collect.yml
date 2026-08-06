@@ -1,0 +1,57 @@
+name: collect
+
+on:
+  schedule:
+    # Cada 5 min (en la práctica GitHub lo corre cada ~5-12 min, es normal)
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+# Evita corridas solapadas (si una tarda, la siguiente espera)
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -q -r requirements.txt
+
+      - name: Tomar snapshot
+        run: python collector.py
+
+      - name: Predicción (solo si ya existe un modelo entrenado)
+        run: |
+          if [ -f model.pkl ]; then
+            python predict.py || echo "predict falló (normal si hay poco historial)"
+          else
+            echo "Sin modelo aún: solo recolectando datos."
+          fi
+
+      - name: Commit y push
+        run: |
+          git config user.name "p2p-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data state prediction.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nada que commitear."
+            exit 0
+          fi
+          git commit -m "snapshot $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          # Reintento ante push simultáneo de otro workflow
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase && sleep 3
+          done
