@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "p2p-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data state prediction.json 2>/dev/null || true
+          git add -A
           if git diff --cached --quiet; then
             echo "Nada que commitear."
             exit 0
