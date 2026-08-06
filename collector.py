@@ -33,7 +33,7 @@ STATE_BCV = os.path.join("state", "last_bcv.txt")
 ROWS_PER_SIDE = 20
 TOP_N_VWAP = 5
 
-BINANCE_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/search/adv/search"
+BINANCE_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 BCV_URL = "https://www.bcv.org.ve/"
 
 HEADERS = {
